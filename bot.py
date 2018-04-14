@@ -385,7 +385,7 @@ def run():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Do something.")
     parser.add_argument('-m', '--method', type=int, required=False, default=0,
-                        help='0: random, 1: first, 2: last')
+                        help='0: first, 1: last, other: random')
 
     args = parser.parse_args()
     method = args.method
@@ -449,21 +449,25 @@ if __name__ == '__main__':
     print method
     print "****************** Running Method ****************"
 
+    
     if method == 0:
-        for i in range(0, config.ID_MISSING_LIST_COUNT * 2):
-            value = random.choice(range(max_value, min_value, -1))
-            if value not in id_list:
-                id_list.append(value)
-    elif method == 1:
-        for i in range(0, config.ID_MISSING_LIST_COUNT * 2):
-            for value in range(max_value, min_value, -1):
-                if value not in id_list:
-                    id_list.append(value)
-    elif method == 2:
         for i in range(0, config.ID_MISSING_LIST_COUNT * 2):
             for value in range(min_value, max_value):
                 if value not in id_list:
                     id_list.append(value)
+    elif method < 5:
+        max_value = max_value - 20 * (method - 1)
+        print "Max = ", max_value, " Min = ", min_value
+
+        for i in range(0, config.ID_MISSING_LIST_COUNT * 2):
+            for value in range(max_value, min_value, -1):
+                if value not in id_list:
+                    id_list.append(value)
+    else:
+        for i in range(0, config.ID_MISSING_LIST_COUNT * 2):
+            value = random.choice(range(max_value, min_value, -1))
+            if value not in id_list:
+                id_list.append(value)
 
     for i in id_list:
         b_Found = False
