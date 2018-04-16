@@ -17,6 +17,10 @@ import re
 from remove import purge
 from os import path
 import argparse
+import json
+import requests
+from requests.cookies import cookiejar_from_dict
+
 sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
 selectStateXPath = "//select[@id='state']"
@@ -67,18 +71,51 @@ def solve_recaptcha(t_driver, answer_id, url, sitekey):
             print("captcha is not solved")
             return config.RECAPTCHA_NOT_SOLVED
         else:
-            script_str = "document.getElementById('{}').style.display='block';".format(answer_id)
-            t_driver.execute_script(script_str)
-            wait()
+            try:
+                # script_str = "document.getElementById('{}').style.display='block';".format(answer_id)
+                # t_driver.execute_script(script_str)
+                # wait()
 
-            script_str = "document.getElementById('{}').value='{}';".format(answer_id, captcha_answer)
-            t_driver.execute_script(script_str)
-            wait()
+                script_str = "document.getElementById('{}').value='{}';".format(answer_id, captcha_answer)
+                t_driver.execute_script(script_str)
+                wait()
+            except Exception as e:
+                print "?????????????????????????????? response not found ?????????????????????????????"
+                if ("-1" not in answer_id) and ("-2" not in answer_id):
+                    answer_id = answer_id + "-1"
+                print answer_id
+                print e
+
+                try:
+                    # script_str = "document.getElementById('{}').style.visibility='visible';".format(answer_id)
+                    # t_driver.execute_script(script_str)
+                    # wait()
+
+                    script_str = "document.getElementById('{}').value='{}';".format(answer_id, captcha_answer)
+                    t_driver.execute_script(script_str)
+                    wait()
+                except Exception as e:
+                    print "?????????????????????????????? response not found ?????????????????????????????"
+                    if ("-1" not in answer_id) and ("-2" not in answer_id):
+                        answer_id = answer_id + "-2"
+                    print answer_id
+                    print e
+
+                    # script_str = "document.getElementById('{}').style.visibility='visible';".format(answer_id)
+                    # t_driver.execute_script(script_str)
+                    # wait()
+
+                    script_str = "document.getElementById('{}').value='{}';".format(answer_id, captcha_answer)
+                    t_driver.execute_script(script_str)
+                    wait()
+
 
             # print "+++++++++++++++++++++++++++++++++"
             # print captcha_answer
             # print "+++++++++++++++++++++++++++++++++"
     except Exception as e:
+        print "-----------------------Solve recaptcha function error -------------------------"
+        print e
         show_exception_detail(e)
         return config.RECAPTCHA_NOT_SOLVED
 
@@ -103,7 +140,7 @@ def found_captcha(t_driver):
         WebDriverWait(t_driver, config.DRIVER_WAITING_SECONDS).until(
             AnyEc(
                 ec.presence_of_element_located(
-                    (By.XPATH, "//textarea[@id='g-recaptcha-response']")
+                    (By.XPATH, "//textarea[contains(@id, 'g-recaptcha-response')]")
                 ),
             )
         )
@@ -270,15 +307,10 @@ def run():
 
             # exit()
 
-            tz = pytz.timezone('America/Los_Angeles')
-            currentdate = datetime.now(tz).strftime('%Y-%m-%d')
-            currenttime = datetime.now(tz).strftime('%H:%M')
-            print "Current Date & Time: {} , {}".format(currentdate, currenttime)
-
             name = ""
             bFirst = True
 
-            for i, item in enumerate(missing_id_list):
+            for i, missing_id in enumerate(missing_id_list):
                 try:
                     doc = Doc(html=driver.page_source)
 
@@ -287,13 +319,45 @@ def run():
                         if item.x("@src") != "":
                             iframe_url = item.x("@src").encode("utf-8").strip()
 
-                    with open("response.html", 'w') as f:
+                    with open("response_found.html", 'w') as f:
                         f.write(driver.page_source.encode("utf-8"))
 
                     if iframe_url != "":
                         print "Re-Captcha Found"
-                        common_lib.phantom_Quit(driver)
-                        exit()
+
+                        # print("wait until it show response")
+                        # WebDriverWait(driver, config.DRIVER_WAITING_SECONDS).until(
+                        #     AnyEc(
+                        #         ec.presence_of_element_located(
+                        #             (By.XPATH, "//textarea[@id='g-recaptcha-response']")
+                        #         ),
+                        #     )
+                        # )
+
+                        # sitekey = ""
+                        # try:
+                        #     sitekey = re.search("k\=(.*?)&", iframe_url).group(1)
+                        # except Exception as e:
+                        #     print e
+                        #     pass
+
+                        # print "SiteKey = ", sitekey
+
+                        # if sitekey == "":
+                        #     common_lib.phantom_Quit(t_driver)
+                        #     exit()
+
+                        # ret_value = solve_recaptcha(driver, "g-recaptcha-response", url, sitekey)
+                        # print "Recatpcha = ", ret_value
+
+                        # if (ret_value == config.RECAPTCHA_SOLVED):
+                        #     print "Click Checkbox after solve recaptcha"
+
+                        
+                        ret_value = found_captcha(driver)
+                        if (ret_value != config.RECAPTCHA_SOLVED):
+                            common_lib.phantom_Quit(driver)
+                            exit()
 
                     # bPass = True
 
@@ -363,11 +427,11 @@ def run():
                     )
                 )
 
-                print "input offender id -> ", item
+                print "input offender id -> ", missing_id
                 offenderIdObj = driver.find_element_by_xpath(offenderIdXPath)
                 offenderIdObj.clear()
                 wait()
-                offenderIdObj.send_keys(str(item))
+                offenderIdObj.send_keys(str(missing_id))
                 wait()
 
                 searchBtnObj = driver.find_element_by_xpath(searchBtnXPath)
@@ -377,8 +441,12 @@ def run():
                 actions.perform()
                 wait_medium()
 
+            print "*********************************"
+            print "Completed"
+            print "*********************************"
+
     except Exception as e:
-        common_lib.phantom_Quit(driver)
+        # common_lib.phantom_Quit(driver)
         print e
 
 
@@ -450,12 +518,13 @@ if __name__ == '__main__':
     print "****************** Running Method ****************"
 
     
-    if method == 0:
+    if method <= 2:
+        min_value = min_value + 20 * method
         for i in range(0, config.ID_MISSING_LIST_COUNT * 2):
             for value in range(min_value, max_value):
                 if value not in id_list:
                     id_list.append(value)
-    elif method < 5:
+    elif method <= 6:
         max_value = max_value - 20 * (method - 1)
         print "Max = ", max_value, " Min = ", min_value
 
