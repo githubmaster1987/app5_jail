@@ -28,7 +28,7 @@ from urllib import urlencode
 import requests
 
 
-reload(sys)  
+reload(sys)
 sys.setdefaultencoding('utf8')
 
 lock = threading.Lock()
@@ -114,8 +114,8 @@ def parse_website(thread_index):
         log_file='logs/log{}.txt'.format(thread_index)
     )
 
-    # no_error = parse_root(0, 0, "sm", "a")
-    # return
+    no_error = parse_root(0, 0, "sm", "a")
+    return
     try:
         for ind, last_name in enumerate(name_list):
             if last_name == "aa":
@@ -370,14 +370,14 @@ def parse_detail(s, doc, thread_index, ind, currentdate, currenttime,
     Eyes = doc.x("//span[@id='ctl00_Main_lblEyes']/text()")
     Height = doc.x("//span[@id='ctl00_Main_lblHeight']/text()")
     Weight = doc.x("//span[@id='ctl00_Main_lblWeight']/text()")
-    ArrestDate = currentdate
-    ArrestTime = ""
     CapturedDate = currentdate
     CapturedTime = currenttime
     ArrestAgency = doc.x("//span[@id='ctl00_Main_lblArrestAgency']/text()")
     AgencyDescription = ""
     DateBooked = doc.x("//span[@id='ctl00_Main_lblDateBooked']/text()")
     TimeBooked = doc.x("//span[@id='ctl00_Main_lblTimeBooked']/text()")
+    ArrestDate = DateBooked
+    ArrestTime = TimeBooked
 
     BookingLocation = ""
     LocationDescription = ""
