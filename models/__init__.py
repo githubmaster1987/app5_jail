@@ -3,3 +3,4 @@ from dashboardjailhistory import DashboardJailHistory
 from dashboardvinename import DashboardVineName
 from dashboardnoresult import DashboardNoResult
 from dashboard_noresult_other import DashboardNoResultOther
+from dashboard_sandiego import DashboardSandiego

@@ -7,7 +7,7 @@ from datetime import datetime
 from datetime import timedelta
 from mysql_manage import *
 from captcha2upload import CaptchaUpload
-from models import DashboardLasd, DashboardNoResultOther
+from models import DashboardLasd, DashboardNoResultOther, DashboardSandiego
 # import captcha
 from time import sleep
 from lastname_list import last_name_list
@@ -323,24 +323,56 @@ def parse_root(thread_index, ind, lastname, firstname):
                 m_name = info_item.x("td[3]/text()")
                 birthday = info_item.x("td[6]/text()")
 
-                history = db.session.query(DashboardLasd).filter(
+                booking = db.session.query(DashboardLasd).filter(
                     DashboardLasd.BookingNo.contains(config.PREFIX_SANDIEGO),
                     DashboardLasd.LastName == l_name,
                     DashboardLasd.FirstName == f_name,
                     DashboardLasd.MiddleName == m_name,
                     DashboardLasd.Birthday == birthday).first()
 
-                if history is None:
-                    print "+++++++++++++++Not Saved+++++++++++++", l_name, f_name
+                history = db.session.query(DashboardSandiego).filter(
+                    DashboardSandiego.LastName == l_name,
+                    DashboardSandiego.FirstName == f_name,
+                    DashboardSandiego.MiddleName == m_name).first()
+
+                if (history is None) and (booking is None):
+                    print "+++++++++++++++Not Saved+++++++++++++", l_name, f_name, m_name
                     ret = parse_booking(s, thread_index, ind, currentdate,
                                   currenttime, lastname, firstname, href)
 
                     if is_error(ret) is True:
                         return ret
                 else:
-                    logger.info("{} Booking Record Exist: {} , {},  {}".format(
-                        prefix_letter(thread_index), history.BookingNo,
-                        history.LastName, history.FirstName))
+                    if history is not None:
+                        logger.info('{} Increase Duplication -> {}, {}, {}'.format(
+                            prefix_letter(thread_index), l_name, f_name, m_name))
+                        history.Duplication = history.Duplication + 1
+                        history.CapturedDate = currentdate
+                        history.CapturedTime = currenttime
+
+                        try:
+                            db.session.commit()
+                        except Exception as e:
+                            logger.info(e)
+
+                    if history is None:
+                        logger.info('{} Saved Booking Information with existing Booking -> {}, {}, {}'.format(
+                            prefix_letter(thread_index), l_name, f_name, m_name))
+
+                        booking_history = DashboardSandiego(
+                            s_middlename=m_name,
+                            s_lastname=l_name,
+                            s_firstname=f_name,
+                            s_captureddate=currentdate,
+                            s_capturedtime=currenttime,
+                            s_duplication=0
+                        )
+
+                        try:
+                            db.session.add(booking_history)
+                            db.session.commit()
+                        except Exception as e:
+                            logger.info(e)
 
         return config.ERROR_NO_NONE
     else:
@@ -376,8 +408,12 @@ def parse_detail(s, doc, thread_index, ind, currentdate, currenttime,
     AgencyDescription = ""
     DateBooked = doc.x("//span[@id='ctl00_Main_lblDateBooked']/text()")
     TimeBooked = doc.x("//span[@id='ctl00_Main_lblTimeBooked']/text()")
-    ArrestDate = DateBooked
-    ArrestTime = TimeBooked
+    ArrestDateStr = DateBooked.split('/')
+    y = ArrestDateStr.pop()
+    d = ArrestDateStr.pop()
+    m = ArrestDateStr.pop()
+    ArrestDate = y+"-"+m+"-"+d
+    ArrestTime = TimeBooked[:5]
 
     BookingLocation = ""
     LocationDescription = ""
@@ -400,53 +436,70 @@ def parse_detail(s, doc, thread_index, ind, currentdate, currenttime,
     print today, yest
     print "Arrest = ", ArrestDate
     print "************************************************************"
+    if (today == ArrestDate) or (yest == ArrestDate):
+        booking_no = BookingNo + config.PREFIX_SANDIEGO
 
-    booking_no = BookingNo + config.PREFIX_SANDIEGO
+        booking = DashboardLasd(
+            s_bookingno=booking_no,
+            s_lastname=LastName,
+            s_firstname=FirstName,
+            s_middlename=MiddleName,
+            s_birthday=Birthday,
+            s_age=Age,
+            s_sex=Sex,
+            s_race=Race,
+            s_hair=Hair,
+            s_eyes=Eyes,
+            s_height=Height,
+            s_weight=Weight,
+            s_arrestdate=ArrestDate,
+            s_arresttime=ArrestTime,
+            s_captureddate=CapturedDate,
+            s_capturedtime=CapturedTime,
+            s_arrestagency=ArrestAgency,
+            s_agencydescription=AgencyDescription,
+            s_datebooked=DateBooked,
+            s_timebooked=TimeBooked,
+            s_bookinglocation=BookingLocation,
+            s_locationdescription=LocationDescription,
+            s_totalbailamount=TotalBailAmount,
+            s_totalholdbailamount=TotalHoldBailAmount,
+            s_grandtotal=GrandTotal,
+            s_housinglocation=HousingLocation,
+            s_permanenthousingassigneddate=PermanentHousingAssignedDate,
+            s_assignedtime=AssignedTime,
+            s_visitorstatus=VisitorStatus,
+            s_facility=Facility,
+            s_address=Address,
+            s_city=City,
+            s_jail=0
+        )
 
-    booking = DashboardLasd(
-        s_bookingno=booking_no,
+        try:
+            db.session.add(booking)
+            db.session.commit()
+        except Exception as e:
+            logger.info(e)
+
+        logger.info('+++++++{} Data was saved {}, {}, {}, {}'.format(
+            prefix_letter(thread_index), BookingNo, ArrestDate, LastName, FirstName))
+    else:
+        logger.info('{} Arrest Date is {}'.format(prefix_letter(thread_index), ArrestDate))
+
+    booking_history = DashboardSandiego(
+        s_middlename=MiddleName,
         s_lastname=LastName,
         s_firstname=FirstName,
-        s_middlename=MiddleName,
-        s_birthday=Birthday,
-        s_age=Age,
-        s_sex=Sex,
-        s_race=Race,
-        s_hair=Hair,
-        s_eyes=Eyes,
-        s_height=Height,
-        s_weight=Weight,
-        s_arrestdate=ArrestDate,
-        s_arresttime=ArrestTime,
-        s_captureddate=CapturedDate,
-        s_capturedtime=CapturedTime,
-        s_arrestagency=ArrestAgency,
-        s_agencydescription=AgencyDescription,
-        s_datebooked=DateBooked,
-        s_timebooked=TimeBooked,
-        s_bookinglocation=BookingLocation,
-        s_locationdescription=LocationDescription,
-        s_totalbailamount=TotalBailAmount,
-        s_totalholdbailamount=TotalHoldBailAmount,
-        s_grandtotal=GrandTotal,
-        s_housinglocation=HousingLocation,
-        s_permanenthousingassigneddate=PermanentHousingAssignedDate,
-        s_assignedtime=AssignedTime,
-        s_visitorstatus=VisitorStatus,
-        s_facility=Facility,
-        s_address=Address,
-        s_city=City,
-        s_jail=0
+        s_captureddate=currentdate,
+        s_capturedtime=currenttime,
+        s_duplication=0
     )
 
     try:
-        db.session.add(booking)
+        db.session.add(booking_history)
         db.session.commit()
     except Exception as e:
         logger.info(e)
-
-    logger.info('+++++++{} Data was saved {}, {}, {}, {}'.format(
-        prefix_letter(thread_index), BookingNo, ArrestDate, LastName, FirstName))
 
     try:
         db.session.query(DashboardNoResultOther).filter(
