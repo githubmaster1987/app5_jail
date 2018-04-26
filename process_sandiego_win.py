@@ -9,7 +9,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--index', type=int, required=True, help='Index of letter from 10 ~ 36')
 
     args = parser.parse_args()
-    method = args.method
+    index = args.index
     processname = 'python random_sandiego.py -i {}'.format(index)
 
     process_running = False 
