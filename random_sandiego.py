@@ -114,8 +114,8 @@ def parse_website(thread_index):
         log_file='logs/log{}.txt'.format(thread_index)
     )
 
-    no_error = parse_root(0, 0, "sm", "a")
-    return
+    # no_error = parse_root(0, 0, "sm", "a")
+    # return
     try:
         for ind, last_name in enumerate(name_list):
             if last_name == "aa":
