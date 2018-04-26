@@ -483,7 +483,10 @@ if __name__ == '__main__':
     print "Current Date & Time: {} , {}".format(currentdate, currenttime)
 
     vine_name_list = db.session.query(DashboardVineName.BookingNo).order_by(DashboardVineName.BookingNo.desc()).all()
-    lasd_list = db.session.query(DashboardLasd.BookingNo).filter(DashboardLasd.ArrestDate == currentdate).order_by(DashboardLasd.BookingNo.desc()).all()
+    lasd_list = db.session.query(DashboardLasd.BookingNo).filter(
+        DashboardLasd.ArrestDate == currentdate,
+        ~DashboardLasd.BookingNo.contains(config.PREFIX_SANDIEGO)
+    ).order_by(DashboardLasd.BookingNo.desc()).all()
     history_list = db.session.query(DashboardJailHistory.BookingNo).all()
 
     lasd_no_list = []
