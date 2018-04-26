@@ -17,10 +17,10 @@ if __name__ == '__main__':
         try:
             cmdline = process.cmdline()
             for t in cmdline:
-                if "bot" in t:
+                if "random_sandiego" in t:
                     print cmdline
 
-                    if cmdline[3] == str(method):
+                    if cmdline[3] == str(index):
                         process_running = True
         except:
             pass
