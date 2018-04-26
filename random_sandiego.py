@@ -333,7 +333,8 @@ def parse_root(thread_index, ind, lastname, firstname):
                 history = db.session.query(DashboardSandiego).filter(
                     DashboardSandiego.LastName == l_name,
                     DashboardSandiego.FirstName == f_name,
-                    DashboardSandiego.MiddleName == m_name).first()
+                    DashboardSandiego.MiddleName == m_name,
+                    DashboardSandiego.Birthday == birthday).first()
 
                 if (history is None) and (booking is None):
                     print "+++++++++++++++Not Saved+++++++++++++", l_name, f_name, m_name
@@ -365,7 +366,8 @@ def parse_root(thread_index, ind, lastname, firstname):
                             s_firstname=f_name,
                             s_captureddate=currentdate,
                             s_capturedtime=currenttime,
-                            s_duplication=0
+                            s_duplication=0,
+                            s_birthday=birthday
                         )
 
                         try:
@@ -492,7 +494,8 @@ def parse_detail(s, doc, thread_index, ind, currentdate, currenttime,
         s_firstname=FirstName,
         s_captureddate=currentdate,
         s_capturedtime=currenttime,
-        s_duplication=0
+        s_duplication=0,
+        s_birthday=Birthday
     )
 
     try:
