@@ -24,7 +24,7 @@ class DashboardLasd(db.Model):
     ArrestTime = db.Column(db.String(25))
     CapturedDate = db.Column(db.String(25))
     CapturedTime = db.Column(db.String(25))
-    ArrestAgency = db.Column(db.String(25))
+    ArrestAgency = db.Column(db.String(100))
     AgencyDescription = db.Column(db.String(200))
     DateBooked = db.Column(db.String(25))
     TimeBooked = db.Column(db.String(25))
