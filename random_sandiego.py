@@ -7,7 +7,7 @@ from datetime import datetime
 from datetime import timedelta
 from mysql_manage import *
 from captcha2upload import CaptchaUpload
-from models import DashboardLasd, DashboardNoResultOther, DashboardSandiego
+from models import DashboardLasd, DashboardNoResultOther, DashboardOtherHistory
 # import captcha
 from time import sleep
 from lastname_list import last_name_list
@@ -114,8 +114,6 @@ def parse_website(thread_index):
         log_file='logs/log{}.txt'.format(thread_index)
     )
 
-    # no_error = parse_root(0, 0, "sm", "a")
-    # return
     try:
         for ind, last_name in enumerate(name_list):
             for first_name in first_name_list:
@@ -327,11 +325,12 @@ def parse_root(thread_index, ind, lastname, firstname):
                     DashboardLasd.MiddleName == m_name,
                     DashboardLasd.Birthday == birthday).first()
 
-                history = db.session.query(DashboardSandiego).filter(
-                    DashboardSandiego.LastName == l_name,
-                    DashboardSandiego.FirstName == f_name,
-                    DashboardSandiego.MiddleName == m_name,
-                    DashboardSandiego.Birthday == birthday).first()
+                history = db.session.query(DashboardOtherHistory).filter(
+                    DashboardOtherHistory.LastName == l_name,
+                    DashboardOtherHistory.FirstName == f_name,
+                    DashboardOtherHistory.MiddleName == m_name,
+                    DashboardOtherHistory.Birthday == birthday,
+                    DashboardOtherHistory.Website == config.PREFIX_SANDIEGO).first()
 
                 if (history is None) and (booking is None):
                     print "+++++++++++++++Not Saved+++++++++++++", l_name, f_name, m_name
@@ -357,14 +356,16 @@ def parse_root(thread_index, ind, lastname, firstname):
                         logger.info('{} Saved Booking Information with existing Booking -> {}, {}, {}'.format(
                             prefix_letter(thread_index), l_name, f_name, m_name))
 
-                        booking_history = DashboardSandiego(
+                        booking_history = DashboardOtherHistory(
                             s_middlename=m_name,
                             s_lastname=l_name,
                             s_firstname=f_name,
                             s_captureddate=currentdate,
                             s_capturedtime=currenttime,
                             s_duplication=0,
-                            s_birthday=birthday
+                            s_birthday=birthday,
+                            s_website=config.PREFIX_SANDIEGO,
+                            s_booking_no=""
                         )
 
                         try:
@@ -485,14 +486,16 @@ def parse_detail(s, doc, thread_index, ind, currentdate, currenttime,
     else:
         logger.info('{} Arrest Date is {}'.format(prefix_letter(thread_index), ArrestDate))
 
-    booking_history = DashboardSandiego(
+    booking_history = DashboardOtherHistory(
         s_middlename=MiddleName,
         s_lastname=LastName,
         s_firstname=FirstName,
         s_captureddate=currentdate,
         s_capturedtime=currenttime,
         s_duplication=0,
-        s_birthday=Birthday
+        s_birthday=Birthday,
+        s_website=config.PREFIX_SANDIEGO,
+        s_booking_no=BookingNo
     )
 
     try:
