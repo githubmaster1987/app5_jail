@@ -118,9 +118,6 @@ def parse_website(thread_index):
     # return
     try:
         for ind, last_name in enumerate(name_list):
-            if last_name == "aa":
-                continue
-
             for first_name in first_name_list:
                 no_error = config.ERROR_NO_NONE
                 try:
